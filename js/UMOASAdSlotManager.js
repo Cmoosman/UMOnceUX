@@ -18,6 +18,7 @@ var UMOASAdSlotManager = (function () {
 	var _postRollStartTime;
 	var _postRollEndTime;
 	var _currentAdDuration;
+	var _currentRunningAdSlotTime = 0;
 	var _currentRunningAdTime = 0;
 	var _midRollAdOverlayFlag = false;
 	var _postRollAdOverlayFlag = false;
@@ -25,6 +26,12 @@ var UMOASAdSlotManager = (function () {
 	var _formatedPostRollFirstEndDuration;
 	var _currentAdClickURL;
 	var _currentBannerURL;
+	var _firstQuartile;
+	var _midPoint;
+	var _thirdQuartile;
+	var _complete;
+	var _trackingURL;
+	var _currentQuartile;
 					
     //Private Methods
    	var getRawTime;
@@ -34,6 +41,7 @@ var UMOASAdSlotManager = (function () {
    	var updateCurrentAdId;
    	var handleAdCountDownDisplay;
    	var handleCompanionBanners;
+   	var getAdSlotTimePercentageComplete;
 	
     return {
 
@@ -79,7 +87,7 @@ var UMOASAdSlotManager = (function () {
 		 * 
 		 * 
 		 */
-		AdSlotConfiguration: function(adtype, totalAdSlotAds, currentTime, totalAdSlotTime, midRollStartTime, midRollEndTime, postRollStartTime, postRollEndTime, currentAdManager, currentAdState, hasAdStarted){
+		AdSlotConfiguration: function(adBreakNodes, currentRawTime, adtype, totalAdSlotAds, currentTime, totalAdSlotTime, midRollStartTime, midRollEndTime, postRollStartTime, postRollEndTime, currentAdManager, currentAdState, hasAdStarted){
 			
 			//set vars for ad slot configuration
 			_adType = adtype;
@@ -329,18 +337,47 @@ var UMOASAdSlotManager = (function () {
 			
 			//convert formated time so we can use it in our interval timer
 			var rawAdTime = UMOASAdSlotManager.getRawTime(_currentAdDuration);
-						
-			if(_currentRunningAdTime == 0){
+			var adSlotPercentageComplete = 	UMOASAdSlotManager.getAdSlotTimePercentageComplete();	
+			if(_currentRunningAdTime == 0 && _currentRunningAdSlotTime == 0){
 				
 				//set the current running time to the ad duration and then start the countdown
 				_currentRunningAdTime = rawAdTime;	
 				_currentRunningAdTime = _currentRunningAdTime - 1;
+				_currentRunningAdSlotTime = _currentRunningAdSlotTime +1;
+				
 				adStartEventHandler(_currentAdId);
-				UMOASBeaconManager.beaconEventHandler(adBreakTracking, _currentAdId);
+				
+				//Ad quartile flags
+				_firstQuartile = false;
+				_midPoint = false;
+				_thirdQuartile = false;
+				_complete = false;
 			}
 			else{
 				_currentRunningAdTime = _currentRunningAdTime - 1;	
-				
+				_currentRunningAdSlotTime = _currentRunningAdSlotTime +1;
+			}
+		   	
+		   	if(_currentRunningAdSlotTime >= adSlotPercentageComplete.twentyFive && _firstQuartile == false){
+				_trackingURL = UMOASAdSlotManager.getCurrentQuartileTrackingURL(_currentAdId, "firstQuartile");
+				UMOASBeaconManager.beaconEventHandler(_currentAdId, currentRawTime, _trackingURL);
+				_firstQuartile = true;
+			}
+			else if(_currentRunningAdSlotTime >= adSlotPercentageComplete.fifty && _midPoint == false){
+				_trackingURL = UMOASAdSlotManager.getCurrentQuartileTrackingURL(_currentAdId, "midpoint");
+				UMOASBeaconManager.beaconEventHandler(_currentAdId, currentRawTime, _trackingURL);
+				_midPoint = true;
+			}
+			else if(_currentRunningAdSlotTime >= adSlotPercentageComplete.seventyFive && _thirdQuartile == false){
+				_trackingURL = UMOASAdSlotManager.getCurrentQuartileTrackingURL(_currentAdId, "thirdQuartile");
+				UMOASBeaconManager.beaconEventHandler(_currentAdId, currentRawTime, _trackingURL);
+				_thirdQuartile = true;
+			}
+			else if(_currentRunningAdSlotTime >= adSlotPercentageComplete.oneHundred && _complete == false){
+				_trackingURL = UMOASAdSlotManager.getCurrentQuartileTrackingURL(_currentAdId, "complete"); 
+				UMOASBeaconManager.beaconEventHandler(_currentAdId, currentRawTime, _trackingURL);
+				_complete = true;
+				_currentRunningAdSlotTime = 0;
 			}
 			
 			//handles UI for ad messaging overlay
@@ -384,6 +421,76 @@ var UMOASAdSlotManager = (function () {
 		    
 		},
 		
+		
+		/**
+		 * Gets the coresponding quartile tracking url
+		 * 
+		 * 
+		 * 
+		 */
+		getCurrentQuartileTrackingURL: function(_currentAdId, _currentQuartile){
+			
+			var currentBeaconURL;
+			
+			for(var r=0; r < adBreakTracking.length; r++){
+				
+				if(adBreakTracking[r].adBreakID == _currentAdId){
+					
+					if(_currentQuartile == "firstQuartile"){
+						currentBeaconURL = adBreakTracking[r].firstQuartile;
+						if(currentBeaconURL){
+							break;	
+						}
+					}
+					else if(_currentQuartile == "midpoint"){
+						currentBeaconURL = adBreakTracking[r].midpoint;
+						if(currentBeaconURL){
+							break;	
+						}
+					}
+					else if(_currentQuartile == "thirdQuartile"){
+						currentBeaconURL = adBreakTracking[r].thirdQuartile;
+						if(currentBeaconURL){
+							break;	
+						}
+					}
+					else if(_currentQuartile == "complete"){
+						currentBeaconURL = adBreakTracking[r].complete;
+						if(currentBeaconURL){
+							break;	
+						}
+					}
+					else{
+						currentBeaconURL = "";
+						if(currentBeaconURL){
+							break;	
+						}
+					}
+				}
+				
+			}    
+            return currentBeaconURL;
+		},
+			
+		/**
+		 * Gets the percentage complte for each ad slot during playback 
+		 * 
+		 * 
+		 */
+		getAdSlotTimePercentageComplete: function(){
+			
+	        var currentAdSlotDuration = UMOASAdSlotManager.getRawTime(_currentAdDuration); //current ad slot duration
+    
+        	var trackingStack = {}
+           	trackingStack.twentyFive = Math.round(currentAdSlotDuration * 0.25);
+           	trackingStack.fifty = Math.round(currentAdSlotDuration * 0.50);
+           	trackingStack.seventyFive = Math.round(currentAdSlotDuration * 0.75);
+           	trackingStack.oneHundred = Math.round(currentAdSlotDuration * 1);
+           	
+           	 return trackingStack;
+           	 
+		},
+		
 		/**
 		 * Clears all data providers 
 		 * 
@@ -400,6 +507,7 @@ var UMOASAdSlotManager = (function () {
         /**
 		 * Converts formated time into numbers that can be added 
 		 *
+		 * @seconds: current playhead time in seconds
 		 * 
 		 */
         getRawTime: function(seconds) {
