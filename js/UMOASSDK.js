@@ -5,6 +5,8 @@ var UMOASSDK = (function () {
     var _adBreakNodes = [];
     var _adBreakTracking = [];
    	var _adBreakCompanionBanners = [];
+   	var _externalProvider = [];
+   	var _externalProviderSDK = [];
    	var onceURL;
 	var adBreaks;
 	var adTracking;
@@ -22,6 +24,8 @@ var UMOASSDK = (function () {
         adBreakNodesArray: _adBreakNodes,
         adBreakTracking: _adBreakTracking,
 		adBreakCompanionBanners: _adBreakCompanionBanners,
+		externalProvider: _externalProvider,
+		externalProviderSDK: _externalProviderSDK,
         
         //Public Methods
         
@@ -53,6 +57,58 @@ var UMOASSDK = (function () {
             }
             
             UMOASSDK.GetAdBreaksNodeName(xml, "vmap:AdBreak");
+		},
+		
+		 /**
+		 * Gets the external adprovider <uo:externalAds> node
+		 * 
+		 * @xml : current vmap:AdBreak xml node and all its children
+		 * 
+		 * @nodeName : the current node we are looking for to parse <StaticResource>
+		 * 
+		 */
+		GetExternalAdProvider: function(xml, nodeName){
+        	   
+		    var colonIndex = nodeName.indexOf(":");
+		    var tag = nodeName.substr(colonIndex + 1);
+		    var nodes = xml.getElementsByTagNameNS("*", tag);
+		    
+		    for (var i = 0; i < nodes.length; i++)
+		    {
+		    	
+				var propertyName = "ProviderName"; 
+				var propertyValue = nodes[i].getAttribute('provider');
+				provider = {};
+                provider[propertyName] = propertyValue;
+
+                _externalProvider.push(provider);
+            }
+            
+            UMOASSDK.GetExternalProviderSDK(xml, "uo:script");
+		},
+		
+		/**
+		 * Gets the external adprovider SDK url inside the <uo:externalAds> node
+		 * 
+		 * @xml : current vmap:VMAP xml node and all its children
+		 * 
+		 * @nodeName : the current node we are looking for to parse <vmap:AdBreak>
+		 * 
+		 */
+        GetExternalProviderSDK: function(xml, nodeName){
+        	   
+		    var colonIndex = nodeName.indexOf(":");
+		    var tag = nodeName.substr(colonIndex + 1);
+		    var nodes = xml.getElementsByTagNameNS("*", tag);
+		    
+		    for (var i = 0; i < nodes.length; i++)
+		    {
+		    	
+		      var externalProviderSDKNode = xml.getElementsByTagNameNS('vmap:Extensions', 'script')[i];
+			  var externalProviderSDK = externalProviderSDKNode.getAttribute('includeurl');
+              _externalProviderSDK.push(adBreaks);
+     		
+     		}
 		},
 		
         /**

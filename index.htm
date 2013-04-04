@@ -198,6 +198,7 @@
 		var totalPrerollads;
 		var totalMidrollads;
 		var totalPostrollads;
+		var currentRawTime;
 		
 			$(document).ready(function () {
 				
@@ -270,7 +271,7 @@
                     	
                     	//create HTML5 video player embed object
                     	var videoTag = "";
-					        videoTag += '<video id="videoPlayer" type="video/mp4" width="520" height="290" autoplay controls="true" poster="">';
+					        videoTag += '<video id="videoPlayer" type="video/mp4" width="520" height="290" autoplay controls="true"  poster="">';
 					        videoTag += '  <source src="' + videoSRC +'" type="video/mp4" />';
 					        videoTag += '</video>';
 				        $("#umvideo").html(videoTag);
@@ -324,6 +325,8 @@
 							//set player object
 							var player = $('#umvideo').find('video');
 							
+							currentRawTime = player[0].currentTime * 1000;
+							
                     		//basic ad configurations
 							var readableCurrentTime = formatTime(player[0].currentTime);
 							assetDuration = formatTime(player[0].duration); 
@@ -369,7 +372,7 @@
 								totalPrerollads = preRollAdManager.length;
 		
 								//ad slot configuration
-								UMOASAdSlotManager.AdSlotConfiguration(adType, totalPrerollads, currentTime, totalPrerollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, preRollAdManager, currentAdState, hasPrerollStarted);
+								UMOASAdSlotManager.AdSlotConfiguration(adBreakNodes, currentRawTime, adType, totalPrerollads, currentTime, totalPrerollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, preRollAdManager, currentAdState, hasPrerollStarted);
 								
 								//handle ad overlay in the UI
 								handleAdOverlay(currentAdState);
@@ -389,7 +392,7 @@
 								totalMidrollads = midRollAdManager.length;
 		
 								//ad slot configuration
-								UMOASAdSlotManager.AdSlotConfiguration(adType, totalMidrollads, currentTime, totalMidrollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, midRollAdManager, currentAdState, hasMidrollStarted);
+								UMOASAdSlotManager.AdSlotConfiguration(adBreakNodes, currentRawTime, adType, totalMidrollads, currentTime, totalMidrollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, midRollAdManager, currentAdState, hasMidrollStarted);
 								
 								//handle ad overlay in the UI
 								handleAdOverlay(currentAdState);
@@ -409,7 +412,7 @@
 								totalPostrollads = postRollAdManager.length;
 								
 								//ad slot configuration
-								UMOASAdSlotManager.AdSlotConfiguration(adType, totalPostrollads, currentTime, totalPostrollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, postRollAdManager, currentAdState, hasPostrollStarted);
+								UMOASAdSlotManager.AdSlotConfiguration(adBreakNodes, currentRawTime, adType, totalPostrollads, currentTime, totalPostrollTime, formattedMidRollStartTime, formattedMidRollEndTime, formattedPostRollStartTime, formattedPostRollEndTime, postRollAdManager, currentAdState, hasPostrollStarted);
 								
 								//we have to handle for the postroll state once current time and asset duration are =
 								if(currentTime == assetDuration){
@@ -432,15 +435,13 @@
 					    		$("#umvideo").off('click');
 					    		
 					    		//enable player controls during content playback
-					    		
-					    		
 					    		if (player[0].hasAttribute("controls")) {
 								     
 								} 
 								else {
 								    player[0].setAttribute("controls","controls");   
 								}
-  
+					    		
 					    		//set current ad state to false
 					    		currentAdState = false;
 					    		handleAdOverlay(currentAdState);
