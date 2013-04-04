@@ -29,7 +29,7 @@ var UMOASBeaconManager = (function () {
 			var humanReadableTime = formatTime(player.currentTime);
 			var playheadTime = player.currentTime * 1000;
 		
-			var adBeaconEvent = "Ad with breakId: " + currentAd + "\n" + " Beacon fired time (milliseconds): " + currentRawTime + "\n" + " Readable play head time: " + humanReadableTime + "\n" + " Current play head time (milliseconds): " + playheadTime + "\n" + " Beacon URL: " + _currentBeaconURL; 
+			var adBeaconEvent = "Ad with breakId: " + currentAd + "\n" + " Readable play head time: " + humanReadableTime + "\n" + " Beacon fired time (milliseconds): " + currentRawTime + "\n" + " Current play head time (milliseconds): " + playheadTime + "\n" + " Beacon URL: " + _currentBeaconURL; 
 			writeToEventConsole(adBeaconEvent);
 		  	
 		  	
